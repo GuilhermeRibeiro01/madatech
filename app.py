@@ -2,6 +2,10 @@ import streamlit as st
 import requests
 import base64
 import os
+from sys import argv
+from re import match, IGNORECASE
+import json
+import re
 
 PAGE_SELECTION_KEY = "page_selection"
 ENDPOINT_URL = "https://ikq8cj1uae.execute-api.us-east-1.amazonaws.com"
@@ -226,15 +230,16 @@ elif st.session_state[PAGE_SELECTION_KEY] == "Chat":
     # print('selected_company_id', selected_company_id)
 
     models = {
-        "claude-v3-sonnet": "anthropic.claude-3-sonnet-20240229-v1:0",
-        "claude-v3-haiku": "anthropic.claude-3-haiku-20240307-v1:0",
+        "claude-v3-haiku":"anthropic.claude-3-haiku-20240307-v1:0",
         "claude-v3-5-sonnet":"anthropic.claude-3-5-sonnet-20240620-v1:0",
+        "claude-v3-5-sonnet-v2":"us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+        "claude-v3-5-haiku":"us.anthropic.claude-3-5-haiku-20241022-v1:0",
     }
 
     model_id_options = list(models.keys())
 
     selected_model_id = st.selectbox("Modelo", model_id_options)
-    show_citations = st.checkbox("Mostrar citações")
+    # show_citations = st.checkbox("Mostrar citações")
 
     chosen_company_id = company_name
     chosen_model_id = models[selected_model_id]
@@ -258,34 +263,81 @@ elif st.session_state[PAGE_SELECTION_KEY] == "Chat":
             "modelId": chosen_model_id,
         }
 
+        headers = {"content-type": "application/json"}
+
         print('request_data', request_data)
 
-        try:
-            response = requests.post(ENDPOINT_URL + "/chat", json=request_data)
-            if response.status_code == 200:
-                response_data = response.json()
-                response_text = response_data["response"]
+        lambda_url = 'https://vkyh7mduinmkpnwvtlwx5opqfe0hfach.lambda-url.us-east-1.on.aws/chat'
 
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": response_text}
-                )
-                st.chat_message("assistant").write(response_text)
+        response_container = st.empty()
 
-                print(f"Response data: {response_data}")
+        def fetch_bot_response():
+            document_citation = False
+            try:
+                response = requests.post(lambda_url, json=request_data, headers=headers, stream=True, timeout=60)
+                print("RESPONSE STATUS:", response.status_code)
 
-                if show_citations:
-                    if "citation" in response_data:
-                        for citation_block in response_data["citation"]:
-                            document_uri = citation_block["uri"]
-                            citation_text = citation_block["text"]
+                if response.status_code == 200:
+                    bot_response = ""  # String acumuladora para todos os chunks da resposta
+                    st.session_state.messages.append({"role": "assistant", "content": ""})
+                    message_placeholder = response_container  # Usando `response_container` para atualização contínua
+                    citations = []
+                    unique_documents = []
+                    for chunk in response.iter_content(chunk_size=2000):
+                        if chunk:
+                            data = chunk.decode()
+                            try:
+                                json_data = json.loads(data)
+                                new_content = json_data.get('text', '')
+                                bot_response += new_content
 
-                            st.markdown(f"**Document URI:** {document_uri}")
-                            st.markdown(f"**Content:**\n{citation_text}")
-                            st.markdown("---")
-            else:
-                st.error("Falhou em obter uma resposta da api.")
-        except Exception as e:
-            st.error(f"Ocorreu um erro ao tentar enviar o pedido.")
+                                message_placeholder.markdown(f"<p>{bot_response}</p>", unsafe_allow_html=True)
+                                st.session_state.messages[-1]["content"] = bot_response
+
+                                # Lista para armazenar os documentos únicos
+                                print("JSON DATA: ",json_data)
+                                if show_citations:
+                                    if document_citation == False:
+                                        if "documents" in json_data:
+                                            for doc in json_data["documents"]:
+                                                if doc not in unique_documents:
+                                                    citation = doc
+                                                    citations.append(citation)
+                                                    unique_documents.append(doc)
+                                            document_citation = True
+                                        st.markdown(f"**Fontes dos documentos:** {', '.join(citations)}")
+                                # Processa as citações APÓS coletar todos os documentos únicos
+                                # if show_citations and unique_documents: # Verifica se unique_documents não está vazio
+                                    
+                                #     for doc in unique_documents:
+                                #         citation = doc.get("name", "Nome não disponível") # Lidar com casos onde "name" pode não existir
+                                #         citations.append(citation)
+
+                                    # Exibe as citações FORA do loop, após processar todos os documentos
+                                # print(citations[0])
+                    
+                                
+                            except json.JSONDecodeError as e:
+                                print("Erro ao decodificar JSON:", e)
+                                continue
+                    # if show_citations:
+                    #     for doc in unique_documents:
+                    #             citation = doc # Lidar com casos onde "name" pode não existir
+                    #             citations.append(citation)  
+                        # st.markdown(f"**Fontes dos documentos:** {', '.join(citations)}")
+                else:
+                    st.error("Falha ao obter uma resposta da API.")
+                    st.session_state.messages.append({"role": "assistant", "content": "Falha ao obter uma resposta da API."})
+
+            except Exception as e:
+                st.error(f"Ocorreu um erro ao tentar enviar o pedido: {e}")
+                st.session_state.messages.append({"role": "assistant", "content": f"Ocorreu um erro: {e}"})
+
+        # Chama a função para processar a resposta em chunks
+        fetch_bot_response()
+
+
+
 
 
 elif st.session_state[PAGE_SELECTION_KEY] == "Upload de documento":
