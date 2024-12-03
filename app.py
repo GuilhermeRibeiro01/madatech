@@ -235,10 +235,8 @@ elif st.session_state[PAGE_SELECTION_KEY] == "Chat":
     product_id = st.selectbox("Modelo", products_options)
 
     models = {
-        "claude-v3-haiku":"anthropic.claude-3-haiku-20240307-v1:0",
         "claude-v3-5-sonnet":"anthropic.claude-3-5-sonnet-20240620-v1:0",
         "claude-v3-5-sonnet-v2":"us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-        "claude-v3-5-haiku":"us.anthropic.claude-3-5-haiku-20241022-v1:0",
     }
 
     model_id_options = list(models.keys())
