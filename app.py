@@ -286,26 +286,28 @@ elif st.session_state[PAGE_SELECTION_KEY] == "Chat":
                     for chunk in response.iter_content(chunk_size=2000):
                         if chunk:
                             data = chunk.decode()
+                            print(data)
                             try:
-                                json_data = json.loads(data)
-                                new_content = json_data.get('text', '')
+                                # json_data = json.loads(data)
+                                
+                                new_content = data
                                 bot_response += new_content
 
                                 message_placeholder.markdown(f"<p>{bot_response}</p>", unsafe_allow_html=True)
                                 st.session_state.messages[-1]["content"] = bot_response
 
                                 # Lista para armazenar os documentos únicos
-                                print("JSON DATA: ",json_data)
-                                if show_citations:
-                                    if document_citation == False:
-                                        if "documents" in json_data:
-                                            for doc in json_data["documents"]:
-                                                if doc not in unique_documents:
-                                                    citation = doc
-                                                    citations.append(citation)
-                                                    unique_documents.append(doc)
-                                            document_citation = True
-                                        st.markdown(f"**Fontes dos documentos:** {', '.join(citations)}")
+                                # print("JSON DATA: ",json_data)
+                                # if show_citations:
+                                #     if document_citation == False:
+                                #         if "documents" in json_data:
+                                #             for doc in json_data["documents"]:
+                                #                 if doc not in unique_documents:
+                                #                     citation = doc
+                                #                     citations.append(citation)
+                                #                     unique_documents.append(doc)
+                                #             document_citation = True
+                                #         st.markdown(f"**Fontes dos documentos:** {', '.join(citations)}")
                                 # Processa as citações APÓS coletar todos os documentos únicos
                                 # if show_citations and unique_documents: # Verifica se unique_documents não está vazio
                                     
