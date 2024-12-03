@@ -218,7 +218,7 @@ elif st.session_state[PAGE_SELECTION_KEY] == "Chat":
 
     # selected_company_name = st.selectbox("Empresa", company_id_options)
 
-    company_name = st.text_input("Nome da Empresa")
+    # company_name = st.text_input("Nome da Empresa")
 
     # selected_company_id = next(
     #     (company['id'] for company in companies if company["name"] == selected_company_name),
@@ -246,7 +246,7 @@ elif st.session_state[PAGE_SELECTION_KEY] == "Chat":
     selected_model_id = st.selectbox("Modelo", model_id_options)
     # show_citations = st.checkbox("Mostrar citações")
 
-    chosen_company_id = company_name
+    # chosen_company_id = company_name
     chosen_model_id = models[selected_model_id]
 
     if "messages" not in st.session_state:
@@ -263,7 +263,6 @@ elif st.session_state[PAGE_SELECTION_KEY] == "Chat":
 
         request_data = {
             "question": prompt,
-            "companyId": chosen_company_id,
             "productId": product_id,
             "modelId": chosen_model_id,
         }
