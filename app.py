@@ -225,9 +225,14 @@ elif st.session_state[PAGE_SELECTION_KEY] == "Chat":
     #     None,
     # )
 
-    product_id = st.text_input("Tipo de seguro")
-
     # print('selected_company_id', selected_company_id)
+    products = {
+        "AUTO": "AUTO",
+    }
+
+    products_options = list(products.keys())
+
+    product_id = st.selectbox("Modelo", products_options)
 
     models = {
         "claude-v3-haiku":"anthropic.claude-3-haiku-20240307-v1:0",
