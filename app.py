@@ -232,7 +232,7 @@ elif st.session_state[PAGE_SELECTION_KEY] == "Chat":
 
     products_options = list(products.keys())
 
-    product_id = st.selectbox("Modelo", products_options)
+    product_id = st.selectbox("Product", products_options)
 
     models = {
         "claude-v3-5-sonnet":"anthropic.claude-3-5-sonnet-20240620-v1:0",
